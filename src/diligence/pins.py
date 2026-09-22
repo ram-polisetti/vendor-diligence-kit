@@ -1,0 +1,24 @@
+"""Pinned sibling repository SHAs.
+
+Every diligence output records these so a reviewer can reproduce exactly which
+versions of the sibling tools produced each result. ``verify_pins()`` warns when
+the local checkout does not match the pinned SHA instead of silently using a
+different version.
+"""
+
+PINS = {
+    "rag-redteam": "169e4c8",
+    "opsaudit": "e2f6220",
+    "ai-act-checker": "bab26de",
+    "model-governance-registry": "a8a8a23",
+    "governance-evidence-vault": None,  # resolved at runtime; P18 was still in flight
+}
+
+# Module path inside each sibling checkout (src layout or flat layout).
+SRC_LAYOUTS = {
+    "rag-redteam": (".", "ragredteam"),
+    "opsaudit": ("src", "opsaudit"),
+    "ai-act-checker": ("src", "aiact"),
+    "model-governance-registry": ("src", "mgreg"),
+    "governance-evidence-vault": ("src", "govault"),
+}

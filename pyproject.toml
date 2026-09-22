@@ -1,0 +1,18 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "vendor-diligence-kit"
+version = "0.1.0"
+description = "Standardized diligence for third-party AI systems: intake, test battery, risk score, registry decision"
+readme = "README.md"
+license = { text = "Apache-2.0" }
+authors = [{ name = "Ram Charan Satya Sai Teja Polisetti" }]
+requires-python = ">=3.10"
+
+[project.scripts]
+diligence = "diligence.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
