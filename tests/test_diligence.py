@@ -261,3 +261,23 @@ def test_registry_decision_mapping(tmp_path):
         assert dec["diligence_recommendation"] == rec_name
         if rec_name == "conditional":
             assert "CONDITIONS" in dec["approval"]["rationale"]
+
+
+@pytest.mark.parametrize('tier', [None, '', 'unknown', 'minimal', 'malformed'])
+def test_unknown_regulatory_tier_cannot_be_go(tmp_path, tier):
+    for d in ('model_card.md', 'data_statement.md', 'evaluation_summary.md', 'safety_policy.md'):
+        (tmp_path / d).write_text('x')
+    rec = intake_mod.build_intake(_full_docs_intake(), docs_dir=tmp_path)
+    result = scoring_mod.score(rec, _battery_for(redteam_rate=1, gap=0, tier=tier))
+    assert result['recommendation'] != 'go'
+    assert result['dimensions']['regulatory_fit']['score'] == 0
+    assert any('review required' in n for n in result['dimensions']['regulatory_fit']['notes'])
+
+
+def test_missing_regulatory_battery_cannot_be_go(tmp_path):
+    for d in ('model_card.md', 'data_statement.md', 'evaluation_summary.md', 'safety_policy.md'):
+        (tmp_path / d).write_text('x')
+    rec = intake_mod.build_intake(_full_docs_intake(), docs_dir=tmp_path)
+    battery = _battery_for(redteam_rate=1, gap=0)
+    del battery['deployer_duties']
+    assert scoring_mod.score(rec, battery)['recommendation'] == 'conditional'
