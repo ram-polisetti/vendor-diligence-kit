@@ -17,6 +17,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from . import siblings
+from .scoring import score as compute_score
 
 
 def _now() -> str:
@@ -71,6 +72,10 @@ def write_decision(registry_path: str | Path, intake: dict, battery: dict,
                    score: dict, approver: str, actor: str = "diligence-kit"
                    ) -> dict:
     """Write the full diligence outcome into the registry; return the record."""
+    current_score = compute_score(intake, battery)
+    if score != current_score:
+        raise ValueError("score artifact is stale or does not match the current intake "
+                         "and battery; run diligence score again before deciding")
     siblings.import_sibling("model-governance-registry")
     from mgreg.store import Registry
 
