@@ -64,3 +64,12 @@ into a tamper-evident bundle with the governance evidence vault.
 
 A Markdown report for the procurement file and a JSON bundle for machines.
 Every artifact records the pinned sibling SHAs.
+
+### Regulatory assessment and current score artifacts
+
+An absent or unrecognized regulatory tier prevents a GO recommendation even
+when the total score is at least 75; a score in that band is conditional pending
+review. Before writing any registry records, `write_decision` checks that the
+provided score matches the current scoring function for the supplied intake and
+battery. A stale or edited score is rejected without opening the registry.
+Re-run `diligence score` before `diligence decide` when this check fails.
