@@ -241,20 +241,20 @@ def test_registry_decision_mapping(tmp_path):
     from diligence import registry as registry_mod
     rec = intake_mod.build_intake(_intake())
     bat = _battery_for()
-    for rec_name, score_total, expected in (
-            ("go", 90.0, "approved"),
-            ("conditional", 60.0, "approved"),
-            ("no-go", 20.0, "rejected")):
-        sc = {"recommendation": rec_name, "total": score_total,
-              "risk_level": "low" if rec_name == "go" else "high",
-              "blockers": [] if rec_name != "no-go" else ["x"],
-              "dimensions": {
-                  "documentation": {"score": 80, "weight": 0.2, "notes": []},
-                  "security_robustness": {"score": 80, "weight": 0.25,
-                                          "notes": []},
-                  "fairness": {"score": 80, "weight": 0.2, "notes": []},
-                  "lineage": {"score": 80, "weight": 0.15, "notes": []},
-                  "regulatory_fit": {"score": 80, "weight": 0.2, "notes": []}}}
+    for rec_name, rate, expected in (
+            ("go", 0.9, "approved"),
+            ("conditional", 0.7, "approved"),
+            ("no-go", 0.3, "rejected")):
+        if rec_name == "go":
+            for d in ("model_card.md", "data_statement.md",
+                      "evaluation_summary.md", "safety_policy.md"):
+                (tmp_path / d).write_text("x")
+            rec = intake_mod.build_intake(_full_docs_intake(), docs_dir=tmp_path)
+        else:
+            rec = intake_mod.build_intake(_intake())
+        bat = _battery_for(redteam_rate=rate)
+        sc = scoring_mod.score(rec, bat)
+        assert sc["recommendation"] == rec_name
         dec = registry_mod.write_decision(tmp_path / f"{rec_name}.db", rec,
                                           bat, sc, approver="tester")
         assert dec["registry_decision"] == expected, rec_name
@@ -281,3 +281,15 @@ def test_missing_regulatory_battery_cannot_be_go(tmp_path):
     battery = _battery_for(redteam_rate=1, gap=0)
     del battery['deployer_duties']
     assert scoring_mod.score(rec, battery)['recommendation'] == 'conditional'
+
+
+def test_decision_rejects_stale_go_before_registry_write(tmp_path):
+    from diligence.registry import write_decision
+    rec = intake_mod.build_intake(_intake())
+    battery = _battery_for(tier='unknown')
+    stale = scoring_mod.score(rec, _battery_for(tier='minimal-risk'))
+    stale['recommendation'] = 'go'
+    registry = tmp_path / 'must-not-exist.db'
+    with pytest.raises(ValueError, match='stale'):
+        write_decision(registry, rec, battery, stale, approver='tester')
+    assert not registry.exists()
